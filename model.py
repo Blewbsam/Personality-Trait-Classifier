@@ -38,7 +38,6 @@ class LSTMEncoder(nn.Module):
 # class LSTMWithAttentionEncoder(nn.module):
     # pass    TODO
 
-
 class PersonalityClassifier(nn.Module):
     def __init__(self, encoder, hidden_size, output_size):
         super(PersonalityClassifier, self).__init__()
