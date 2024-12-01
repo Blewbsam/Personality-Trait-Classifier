@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from transformers import BertTokenizer
 import torch
+from torch.utils.data import Dataset
 import re
 
 DATA_PATH = "data/BFB.csv"
@@ -11,8 +12,12 @@ DATA_PATH = "data/BFB.csv"
 TRAIT_LABELS = ["Extraversion","Agreeableness","Openness","Neuroticism","Conscientiousness"]
 
 class Preprocessor():
-    def __init__(self,path):
+    def __init__(self,path=DATA_PATH,count=3):
+        '''
+        count is number of sentences text should be split into
+        '''
         self.data = pd.read_csv(path)
+        self.sentence_count = count
 
 
 
@@ -67,9 +72,29 @@ class Preprocessor():
         plt.ylabel("Frequency")
         plt.show()
 
+    def tokenized_sequence_length_histogram(self,sample_size=1000):
+        '''
+        Displays histogramo of length of the non-zero tokenized sample of inputs
+        '''
+        bt = BertTextTokenizer()
+        rows = pp.split_text()
+        rows = list(rows.sample(sample_size)["text"])
 
+        input_ids, input_attention = bt.encode_text(rows)
 
-    def split_text(self, row_count=None, sentence_count=3):
+        non_zero_counts = torch.count_nonzero(input_ids,dim=1)
+        quant = torch.quantile(non_zero_counts.float(),0.95)
+
+        plt.hist(non_zero_counts,color="tomato")
+        plt.axvline(x=quant,color="b",linestyle="--",label=f"95% median  at {int(quant)}")
+
+        plt.xlabel("Number of tokens")
+        plt.ylabel("Frequency")
+        plt.legend()
+        plt.title(f"Histogram of token count for a random sample of 1000 {self.sentence_count} sentence texts")
+        plt.show()
+
+    def split_text(self, row_count=None):
         '''
         splits text column of first row_count rows of data to sentence_count
         row_count = None splits all rows.
@@ -81,7 +106,7 @@ class Preprocessor():
             '''
             split = re.split(r'(?<=[.!?]) +', x)
             res = []
-            for i in range(0,len(split)-2,sentence_count):
+            for i in range(0,len(split)-2,self.sentence_count):
                 sent = split[i]
                 sent += split[i+1]
                 sent += split[i+2]
@@ -95,24 +120,44 @@ class Preprocessor():
         return rows
 
 
-    def train_test_split(self, train_size):
+    def train_test_split(self, num_rows=None,train_size):
         '''
         Splits training and testing data into two from original DataFrame.
+        num_rows: between 0 and label_df.shape[0]
         train_size: between 0 and 1.0
         '''
-
         label_df = self.data[["text", "Extraversion", "Agreeableness", "Openness", "Neuroticism", "Conscientiousness"]]
+
+        label_df = label_df.sample(num_rows) if num_rows is not None
         
         train, test = train_test_split(label_df, train_size=train_size, shuffle=True)
 
         return train.iloc[:, 0], train.iloc[:, 1:], test.iloc[:, 0], test.iloc[:, 1:]
 
+class PersonalityDataset(Dataset):
+    def __init__(self,texts,labels,tokenizer,max_length=512):
+        self.texts = texts
+        self.labels = labels
+        self.tokenizer = tokenizer
+        self.max_length = max_length
 
-# pp = Preprocessor(DATA_PATH)
-# print(pp.data.shape)
-# rows = pp.split_text()
-# pp.text_length_histogram(rows)
-# print(rows.shape)
+    def __len__(self):
+        return len(self.texts)
+
+    def __getitem__(self,idx):
+        text = self.texts[idx]
+        label = self.labels[idx]
+
+
+        encoded = self.tokenizer.tokenize([text])
+        input_ids = encoded[0]
+        attention_mask = encoded[1]
+        
+        return {
+            "input_ids": input_ids.squeeze(0), 
+            "attention_mask": attention_mask.squeeze(0), 
+            "label": torch.tensor(label, dtype=torch.float)
+        }
 
 
 
@@ -168,27 +213,4 @@ class BertTextTokenizer:
             batch = texts[i*batch_size: (i+1)*batch_size]
             input_ids, attention_mask = self.tokenize(batch)
             yield input_ids, attention_mask
-
-
-
-bt = BertTextTokenizer()
-
-pp = Preprocessor(DATA_PATH)
-rows = pp.split_text()
-rows = list(rows.sample(1000)["text"])
-
-input_ids,input_attention = bt.encode_text(rows)
-
-print(input_ids.shape)
-non_zero_counts = torch.count_nonzero(input_ids,dim=1)
-
-print(non_zero_counts)
-print(non_zero_counts.shape)
-
-
-plt.hist(non_zero_counts)
-plt.xlabel("Number of tokens")
-plt.ylabel("Frequency")
-plt.title("Histogram of token length for a sample of 1000 3 sentence texts")
-plt.show()
 
