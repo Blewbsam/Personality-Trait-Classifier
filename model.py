@@ -13,25 +13,35 @@ class LSTMEncoder(nn.Module):
             bidirectional=bidirectional,
             dropout=dropout if num_layers > 1 else 0
         )
+
+    def overview(self):
+        for name, param in self.lstm.named_parameters():
+            print(name,param.shape)
     
     def forward(self, x, lengths):  
         ''' 
         x: (batch_size,sequence_length,input_size)
-        lengths: for setting lengths to be the same.
+        lengths: 1d tensor of integers specifying how each inputs in the 
+        batch is to be packed to ignore padding for efficien computation
         '''
-
-
         # Pack the sequence to set all lengths to be the same
-        packed = nn.utils.rnn.pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
-        packed_out, (h_n, c_n) = self.lstm(packed)
-        # Optionally unpack the sequence
-        out, _ = nn.utils.rnn.pad_packed_sequence(packed_out, batch_first=True)
+        # x = x.unsqueeze(-1)
+
+        print(f"Input shape to model: {x.shape}")
+        # packed = nn.utils.rnn.pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
+        print("Checkpoint.")
+        self.overview()
+        out, (h_n, c_n) = self.lstm(x)
+        print("Checkpoint 2")
+        # unpack the sequence
+        # out, _ = nn.utils.rnn.pad_packed_sequence(packed_out, batch_first=True)
         # Return final hidden state (concat if bidirectional)
         if self.lstm.bidirectional:
             h_n = h_n.view(self.lstm.num_layers, 2, -1, self.lstm.hidden_size)
             h_n = torch.cat((h_n[-1, 0], h_n[-1, 1]), dim=-1)
         else:
             h_n = h_n[-1]
+  
         return h_n
 
 
@@ -46,6 +56,9 @@ class PersonalityClassifier(nn.Module):
     
     def forward(self, x, lengths):
         encoded = self.encoder(x, lengths)
+        print()
+        print(f"Encoded shape: {encoded.shape}")  # Add this line to check the shape
+        print()
         l1 = self.fc(encoded)
-        sig = torch.sigmoid(self.fc(encoded))
+        sig = torch.sigmoid(l1)
         return sig  

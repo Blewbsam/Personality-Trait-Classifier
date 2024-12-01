@@ -80,10 +80,13 @@ class Preprocessor():
         rows = pp.split_text()
         rows = list(rows.sample(sample_size)["text"])
 
-        input_ids, input_attention = bt.encode_text(rows)
-
+        input_ids, _ = bt.tokenize(rows)
         non_zero_counts = torch.count_nonzero(input_ids,dim=1)
+
+        # non_zero_counts = torch.tensor([len(row) for row in input_ids])
+
         quant = torch.quantile(non_zero_counts.float(),0.95)
+
 
         plt.hist(non_zero_counts,color="tomato")
         plt.axvline(x=quant,color="b",linestyle="--",label=f"95% median  at {int(quant)}")
@@ -120,21 +123,24 @@ class Preprocessor():
         return rows
 
 
-    def train_test_split(self, num_rows=None,train_size):
+    def train_test_split(self, data=None,num_rows=None,train_size=0.8):
         '''
         Splits training and testing data into two from original DataFrame.
         num_rows: between 0 and label_df.shape[0]
         train_size: between 0 and 1.0
         '''
-        label_df = self.data[["text", "Extraversion", "Agreeableness", "Openness", "Neuroticism", "Conscientiousness"]]
+        label_df = data[["text", "Extraversion", "Agreeableness", "Openness", "Neuroticism", "Conscientiousness"]]
 
-        label_df = label_df.sample(num_rows) if num_rows is not None
+        label_df = label_df.sample(num_rows) if num_rows is not None else label_df
         
         train, test = train_test_split(label_df, train_size=train_size, shuffle=True)
 
-        return train.iloc[:, 0], train.iloc[:, 1:], test.iloc[:, 0], test.iloc[:, 1:]
+        return train.iloc[:, 0].to_numpy(), train.iloc[:, 1:].to_numpy(), test.iloc[:, 0].to_numpy(), test.iloc[:, 1:].to_numpy() # added to_numpy to these
 
 class PersonalityDataset(Dataset):
+    '''
+    
+    '''
     def __init__(self,texts,labels,tokenizer,max_length=512):
         self.texts = texts
         self.labels = labels
@@ -148,8 +154,8 @@ class PersonalityDataset(Dataset):
         text = self.texts[idx]
         label = self.labels[idx]
 
-
         encoded = self.tokenizer.tokenize([text])
+
         input_ids = encoded[0]
         attention_mask = encoded[1]
         
@@ -158,8 +164,6 @@ class PersonalityDataset(Dataset):
             "attention_mask": attention_mask.squeeze(0), 
             "label": torch.tensor(label, dtype=torch.float)
         }
-
-
 
 
 
@@ -172,20 +176,13 @@ class BertTextTokenizer:
     def tokenize(self,texts):
         encoded_inputs = self.tokenizer(
             texts,
-            padding=True,         
+            padding="max_length",     ## setting to True doesn't apply padding to single_sequences.
             truncation=True,      
             max_length=self.max_length,
             return_tensors='pt', 
             return_attention_mask=True  
         )
-        
         return encoded_inputs['input_ids'], encoded_inputs['attention_mask']
-    
-    def encode_text(self,texts):
-        '''
-        Process texts 
-        '''
-        return self.tokenize(texts)
 
     def decode_text(self,input_ids):
         '''
@@ -213,4 +210,3 @@ class BertTextTokenizer:
             batch = texts[i*batch_size: (i+1)*batch_size]
             input_ids, attention_mask = self.tokenize(batch)
             yield input_ids, attention_mask
-

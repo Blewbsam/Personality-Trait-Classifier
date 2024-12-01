@@ -8,7 +8,10 @@ from model import *
 
 
 # Model parameters:
-emb_dim = 512
+# emb_dim = 512
+# hidden_size = 512
+emb_dim = 96
+hidden_size = 32
 attention_dim = 512
 decoder_dim = 512
 dropout = 0
@@ -27,15 +30,21 @@ def train_model(model,train_loader,val_loader,optimizer,loss_fn,epochs):
         train_loss = 0
 
         for batch in train_loader:
-            input_ids = batch["inpuit_ids"]
+            input_ids = batch["input_ids"]
             attention_mask = batch["attention_mask"]
             labels = batch["label"]
 
             optimizer.zero_grad()
-            
-            outputs = model(input_ids, attention_mask)
+
+            lengths = torch.count_nonzero(attention_mask,dim=1)
+
+            # forward pass
+            outputs = model(input_ids.to(torch.float32), lengths)
+            lenghts = torch.full((len(input_ids),), emb_dim, dtype=torch.float) 
+            outputs = model(input_ids,lenghts)
             loss = loss_fn(outputs, labels)
             
+            # backward pass
             loss.backward()
             optimizer.step()
             
@@ -53,18 +62,15 @@ def validate_model(model,val_loader,loss_fn):
     with torch.no_grad():
         for batch in val_loader:
             input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
+            _ = batch['attention_mask'].to(device)
             labels = batch['label'].to(device)
             
-            outputs = model(input_ids, attention_mask)
+            outputs = model(input_ids,emb_dim)
             loss = loss_fn(outputs, labels)
             
             val_loss += loss.item()
     
     return val_loss
-
-
-
 
 def main():
 
@@ -81,7 +87,7 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_dataset,batch_size=32)
 
-    encoder = LSTMEncoder(input_size=768, hidden_size=512, num_layers=1, bidirectional=True)
+    encoder = LSTMEncoder(input_size=emb_dim, hidden_size= hidden_size, num_layers=1, bidirectional=True)
     model = PersonalityClassifier(encoder=encoder, hidden_size=1024, output_size=5).to(device)
 
     ## Training setup
