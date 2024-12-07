@@ -76,7 +76,7 @@ class Preprocessor():
         '''
         Displays histogramo of length of the non-zero tokenized sample of inputs
         '''
-        bt = BertTextTokenizer()
+        bt = BertTextTokenizer(max_length=512)
         rows = pp.split_text()
         rows = list(rows.sample(sample_size)["text"])
 
@@ -141,11 +141,10 @@ class PersonalityDataset(Dataset):
     '''
     
     '''
-    def __init__(self,texts,labels,tokenizer,max_length=512):
+    def __init__(self,texts,labels,tokenizer):
         self.texts = texts
         self.labels = labels
         self.tokenizer = tokenizer
-        self.max_length = max_length
 
     def __len__(self):
         return len(self.texts)
@@ -153,7 +152,6 @@ class PersonalityDataset(Dataset):
     def __getitem__(self,idx):
         text = self.texts[idx]
         label = self.labels[idx]
-
         encoded = self.tokenizer.tokenize([text])
 
         input_ids = encoded[0]
@@ -168,7 +166,7 @@ class PersonalityDataset(Dataset):
 
 
 class BertTextTokenizer:
-    def __init__(self,model_name="bert-base-uncased",max_length=512):
+    def __init__(self,model_name="bert-base-uncased",max_length=96):
 
         self.tokenizer = BertTokenizer.from_pretrained(model_name)
         self.max_length = max_length
@@ -210,3 +208,20 @@ class BertTextTokenizer:
             batch = texts[i*batch_size: (i+1)*batch_size]
             input_ids, attention_mask = self.tokenize(batch)
             yield input_ids, attention_mask
+
+
+
+
+class Evaluation:
+    # used for getting model metrics during training
+    @staticmethod
+    def plot_loss(training_loss,validation_loss):
+        assert len(training_loss) == len(validation_loss)
+
+        plt.plot(training_loss, label="Training",color="r")
+        plt.plot(validation_loss, label="Validation",color="b")
+        plt.xlabel("Epoch")
+        plt.ylabel("Losses")
+        plt.legend()
+        plt.show()
+
