@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn import metrics
 from transformers import BertTokenizer,DistilBertTokenizer
 import torch
 from torch.utils.data import Dataset
@@ -12,12 +13,11 @@ DATA_PATH = "data/BFB.csv"
 TRAIT_LABELS = ["Extraversion","Agreeableness","Openness","Neuroticism","Conscientiousness"]
 
 class Preprocessor():
-    def __init__(self,path=DATA_PATH,count=3):
+    def __init__(self,path=DATA_PATH):
         '''
         count is number of sentences text should be split into
         '''
         self.data = pd.read_csv(path)
-        self.sentence_count = count
 
 
 
@@ -72,15 +72,17 @@ class Preprocessor():
         plt.ylabel("Frequency")
         plt.show()
 
-    def tokenized_sequence_length_histogram(self,sample_size=1000):
+
+
+    def tokenized_sequence_length_histogram(self,tokenizer,sample_size,sentence_count):
         '''
         Displays histogramo of length of the non-zero tokenized sample of inputs
         '''
-        bt = BertTextTokenizer(max_length=512)
-        rows = pp.split_text()
+
+        rows = self.split_text(sentence_count)
         rows = list(rows.sample(sample_size)["text"])
 
-        input_ids, _ = bt.tokenize(rows)
+        input_ids, _ = tokenizer.tokenize(rows)
         non_zero_counts = torch.count_nonzero(input_ids,dim=1)
 
         # non_zero_counts = torch.tensor([len(row) for row in input_ids])
@@ -94,7 +96,32 @@ class Preprocessor():
         plt.xlabel("Number of tokens")
         plt.ylabel("Frequency")
         plt.legend()
-        plt.title(f"Histogram of token count for a random sample of 1000 {self.sentence_count} sentence texts")
+        plt.title(f"Histogram of token count for a random sample of 1000 {sentence_count} sentence texts")
+        plt.show()
+
+
+
+    def spl(self,x,sentence_count):
+        ''' 
+        Splits given text to valid sequence of sentences
+        '''
+        split = re.split(r'(?<=[.!?]) +', x)
+        res = []
+        for i in range(0,len(split)-(sentence_count - 1),sentence_count):
+            sent = ""
+            for j in range(sentence_count):
+                sent += split[i + j]
+            res.append(sent)
+        return res
+
+    def split_text_lengths_histogram(self,sentence_count):
+        ''' 
+        plots histogram of how many excerpts each column contains after being split into sentence_count sentences
+        '''
+
+        rows = self.data.iloc[0:]
+        lengths = rows["text"].map(lambda x: len(self.spl(x,sentence_count)))
+        plt.hist(lengths,bins=100)
         plt.show()
 
     def split_text(self, sentence_count):
@@ -103,21 +130,9 @@ class Preprocessor():
         sentence_count (int) is the number of sentences that should be merged into one cell
         '''
 
-        def spl(x):
-            ''' 
-            Splits given text to valid sequence of sentences
-            '''
-            split = re.split(r'(?<=[.!?]) +', x)
-            res = []
-            for i in range(0,len(split)-(sentence_count - 1),self.sentence_count):
-                sent = ""
-                for j in range(sentence_count):
-                    sent += split[i + j]
-                res.append(sent)
-            return res
             
         rows = self.data.iloc[0:]
-        rows["text"] = rows["text"].map(spl)
+        rows["text"] = rows["text"].map(lambda x: self.spl(x,sentence_count))
         rows = rows.explode("text")
 
         return rows
@@ -152,6 +167,7 @@ class PersonalityDataset(Dataset):
     def __getitem__(self,idx):
         text = self.texts[idx]
         label = self.labels[idx]
+        # print(f"Text type: {type(text)}, Text value: {text}")
         encoded = self.tokenizer.tokenize([text])
 
         input_ids = encoded[0]
@@ -213,21 +229,48 @@ class TextTokenizer:
 class Evaluation:
     # used for getting model metrics during training
     @staticmethod
-    def plot_loss(training_loss,validation_loss):
+    def plot_loss(training_loss,validation_loss,sentence_length,num_rows):
         assert len(training_loss) == len(validation_loss)
 
         plt.plot(training_loss, label="Training",color="r")
         plt.plot(validation_loss, label="Validation",color="b")
         plt.xlabel("Epoch")
         plt.ylabel("Losses")
+        plt.title(f"Losses for {num_rows} excerpts each of length {sentence_length}")
         plt.legend()
         plt.show()
 
     @staticmethod
-    def plot_acc(accuracies):
+    def plot_acc(accuracies,validation_acc,sentence_length, num_rows):
         plt.plot(accuracies, label="Training",color="r")
+        plt.plot(validation_acc,label="Validation", color="b")
         plt.xlabel("Epoch")
         plt.ylabel("Accuracy")
+        plt.title(f"Accuracy for {num_rows} excerpts each of length {sentence_length}")
         plt.legend()
         plt.show()
+
+
+    def plot_confusions(actual,predicted):
+        '''
+        Plotting confusion matrix for each personality trait. That is eac column in matrix.
+        actual: pytorch tensor with shape (n,5)
+        predicted: pytorch tensor with shape (n,5)
+        '''
+        labels = ["Extraversion","Agreeableness","Openness","Neuroticism","Conscientiousness"]
+
+        def conf(actual,predicted,label):
+            confusion_matrix = metrics.confusion_matrix(actual,predicted)
+            cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix = confusion_matrix, display_labels = [0, 1])
+            cm_display.plot()
+            plt.show()
+
+        assert actual.ndim == 2
+        assert predicted.ndim == 2
+        assert predicted.shape[0] == actual.shape[0]
+
+        for i in range(5):
+            actual_col = actual[:,i]
+            predicted_col = actual[:,i]
+            conf(actual_col,predicted_col,labels[i])
 

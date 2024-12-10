@@ -1,0 +1,31 @@
+{
+  "build": "5_cp313",
+  "build_number": 5,
+  "channel": "https://conda.anaconda.org/conda-forge/osx-arm64",
+  "constrains": [
+    "python 3.13.* *_cp313"
+  ],
+  "depends": [],
+  "extracted_package_dir": "/Users/samsalehi/miniforge3/pkgs/python_abi-3.13-5_cp313",
+  "files": [],
+  "fn": "python_abi-3.13-5_cp313.conda",
+  "license": "BSD-3-Clause",
+  "link": {
+    "source": "/Users/samsalehi/miniforge3/pkgs/python_abi-3.13-5_cp313",
+    "type": 1
+  },
+  "md5": "b8e82d0a5c1664638f87f63cc5d241fb",
+  "name": "python_abi",
+  "package_tarball_full_path": "/Users/samsalehi/miniforge3/pkgs/python_abi-3.13-5_cp313.conda",
+  "paths_data": {
+    "paths": [],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "4437198eae80310f40b23ae2f8a9e0a7e5c2b9ae411a8621eb03d87273666199",
+  "size": 6322,
+  "subdir": "osx-arm64",
+  "timestamp": 1723823058000,
+  "url": "https://conda.anaconda.org/conda-forge/osx-arm64/python_abi-3.13-5_cp313.conda",
+  "version": "3.13"
+}

@@ -44,11 +44,12 @@ class LSTMEncoder(nn.Module):
 
 
 class TransformerPersonalityClassifier(nn.Module):
-    def __init__(self, hidden_size, output_size, pretrained_model="distilbert-base-uncased"):
+    def __init__(self, hidden_size, output_size, pretrained_model="distilbert-base-uncased",dropout_prob=0.3):
         super(TransformerPersonalityClassifier, self).__init__()
         # Load DistilBERT model
         self.encoder = DistilBertModel.from_pretrained(pretrained_model)
         self.fc = nn.Linear(self.encoder.config.hidden_size, hidden_size)
+        self.dropout = nn.Dropout(dropout_prob) 
         self.fc2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, input_ids, attention_mask):
@@ -60,6 +61,7 @@ class TransformerPersonalityClassifier(nn.Module):
         pooled_output = outputs.last_hidden_state[:, 0]  # CLS token representation
         # possibly add batch normalization
         l1 = torch.relu(self.fc(pooled_output)) 
+        l1 = self.dropout(l1)
         l2 = self.fc2(l1)
         sig = torch.sigmoid(l2)  # Multi-label classification
         return sig
@@ -82,5 +84,3 @@ class LSTMPersonalityClassifier(nn.Module):
         l2 = self.fc2(l1)
         sig = torch.sigmoid(l2)
         return sig  
-
-    # def predict(string)

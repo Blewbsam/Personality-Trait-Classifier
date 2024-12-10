@@ -1,0 +1,75 @@
+{
+  "build": "h3f77e49_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/osx-arm64",
+  "constrains": [],
+  "depends": [
+    "__osx >=11.0",
+    "libzlib >=1.3.1,<2.0a0"
+  ],
+  "extracted_package_dir": "/Users/samsalehi/miniforge3/pkgs/libsqlite-3.47.2-h3f77e49_0",
+  "files": [
+    "include/sqlite3.h",
+    "include/sqlite3ext.h",
+    "lib/libsqlite3.0.dylib",
+    "lib/libsqlite3.dylib",
+    "lib/pkgconfig/sqlite3.pc"
+  ],
+  "fn": "libsqlite-3.47.2-h3f77e49_0.conda",
+  "license": "Unlicense",
+  "link": {
+    "source": "/Users/samsalehi/miniforge3/pkgs/libsqlite-3.47.2-h3f77e49_0",
+    "type": 1
+  },
+  "md5": "122d6f29470f1a991e85608e77e56a8a",
+  "name": "libsqlite",
+  "package_tarball_full_path": "/Users/samsalehi/miniforge3/pkgs/libsqlite-3.47.2-h3f77e49_0.conda",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "include/sqlite3.h",
+        "path_type": "hardlink",
+        "sha256": "b4b4cbcc2bd6dda8eaf348103c330c971676a59b3732cca068098f574de43994",
+        "sha256_in_prefix": "b4b4cbcc2bd6dda8eaf348103c330c971676a59b3732cca068098f574de43994",
+        "size_in_bytes": 651186
+      },
+      {
+        "_path": "include/sqlite3ext.h",
+        "path_type": "hardlink",
+        "sha256": "b184dd1586d935133d37ad76fa353faf0a1021ff2fdedeedcc3498fff74bbb94",
+        "sha256_in_prefix": "b184dd1586d935133d37ad76fa353faf0a1021ff2fdedeedcc3498fff74bbb94",
+        "size_in_bytes": 38149
+      },
+      {
+        "_path": "lib/libsqlite3.0.dylib",
+        "path_type": "hardlink",
+        "sha256": "a002ff0bf04b5f8ffb068e96298422f2f543687bece93368dd1061721f08ae13",
+        "sha256_in_prefix": "a002ff0bf04b5f8ffb068e96298422f2f543687bece93368dd1061721f08ae13",
+        "size_in_bytes": 1605488
+      },
+      {
+        "_path": "lib/libsqlite3.dylib",
+        "path_type": "softlink",
+        "sha256": "a002ff0bf04b5f8ffb068e96298422f2f543687bece93368dd1061721f08ae13",
+        "size_in_bytes": 1605488
+      },
+      {
+        "_path": "lib/pkgconfig/sqlite3.pc",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/Users/runner/miniforge3/conda-bld/sqlite-split_1733761698530/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeh",
+        "sha256": "ac664349a82f0f841e339650126469006dab43132b822129bad3772a1ab75ddc",
+        "sha256_in_prefix": "331a88b1f4332c86123d5e0f83d3f1ce8602d3fa48513c938d8091099cb8a485",
+        "size_in_bytes": 512
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "None",
+  "sha256": "f192f3c8973de9ec4c214990715f13b781965247a5cedf9162e7f9e699cfc3c4",
+  "size": 850553,
+  "subdir": "osx-arm64",
+  "timestamp": 1733762057000,
+  "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libsqlite-3.47.2-h3f77e49_0.conda",
+  "version": "3.47.2"
+}
