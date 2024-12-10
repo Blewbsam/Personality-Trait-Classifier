@@ -1,6 +1,7 @@
 
 import torch
 import torch.nn as nn
+from transformers import DistilBertModel, DistilBertTokenizer
 
 class LSTMEncoder(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, bidirectional=False, dropout=0.5):
@@ -41,16 +42,45 @@ class LSTMEncoder(nn.Module):
 # class LSTMWithAttentionEncoder(nn.module):
     # pass    TODO
 
-class PersonalityClassifier(nn.Module):
+
+class TransformerPersonalityClassifier(nn.Module):
+    def __init__(self, hidden_size, output_size, pretrained_model="distilbert-base-uncased"):
+        super(TransformerPersonalityClassifier, self).__init__()
+        # Load DistilBERT model
+        self.encoder = DistilBertModel.from_pretrained(pretrained_model)
+        self.fc = nn.Linear(self.encoder.config.hidden_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
+
+    def forward(self, input_ids, attention_mask):
+        # Get embeddings from DistilBERT
+        assert input_ids.ndim == 2, f"Expected 2D input_ids, got {input_ids.ndim}D"
+        assert attention_mask.ndim == 2, f"Expected 2D attention_mask, got {attention_mask.ndim}D"
+
+        outputs = self.encoder(input_ids=input_ids, attention_mask=attention_mask)
+        pooled_output = outputs.last_hidden_state[:, 0]  # CLS token representation
+        # possibly add batch normalization
+        l1 = torch.relu(self.fc(pooled_output)) 
+        l2 = self.fc2(l1)
+        sig = torch.sigmoid(l2)  # Multi-label classification
+        return sig
+
+
+
+class LSTMPersonalityClassifier(nn.Module):
     def __init__(self, encoder, hidden_size, output_size):
-        super(PersonalityClassifier, self).__init__()
+        ## Expects LSTM encoder
+        super(LSTMPersonalityClassifier, self).__init__()
         self.encoder = encoder
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.fc = nn.Linear(hidden_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size,output_size)
     
     def forward(self, x, lengths):
+        assert x.ndim == 3
+        assert lengths.ndim == 1
         encoded = self.encoder(x, lengths)
         l1 = self.fc(encoded)
-        sig = torch.sigmoid(l1)
+        l2 = self.fc2(l1)
+        sig = torch.sigmoid(l2)
         return sig  
 
     # def predict(string)

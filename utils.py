@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from transformers import BertTokenizer
+from transformers import BertTokenizer,DistilBertTokenizer
 import torch
 from torch.utils.data import Dataset
 import re
@@ -163,12 +163,12 @@ class PersonalityDataset(Dataset):
             "label": torch.tensor(label, dtype=torch.float)
         }
 
-
-
-class BertTextTokenizer:
-    def __init__(self,model_name="bert-base-uncased",max_length=96):
-
-        self.tokenizer = BertTokenizer.from_pretrained(model_name)
+class TextTokenizer:
+    # model names:
+    # 1) bert-base-uncased
+    # 2) distilbert-base-uncased
+    def __init__(self,tokenizer,max_length=96):
+        self.tokenizer = tokenizer
         self.max_length = max_length
 
     def tokenize(self,texts):
@@ -208,8 +208,6 @@ class BertTextTokenizer:
             batch = texts[i*batch_size: (i+1)*batch_size]
             input_ids, attention_mask = self.tokenize(batch)
             yield input_ids, attention_mask
-
-
 
 
 class Evaluation:
