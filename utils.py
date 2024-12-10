@@ -97,10 +97,10 @@ class Preprocessor():
         plt.title(f"Histogram of token count for a random sample of 1000 {self.sentence_count} sentence texts")
         plt.show()
 
-    def split_text(self, row_count=None):
+    def split_text(self, sentence_count):
         '''
         splits text column of first row_count rows of data to sentence_count
-        row_count = None splits all rows.
+        sentence_count (int) is the number of sentences that should be merged into one cell
         '''
 
         def spl(x):
@@ -109,14 +109,14 @@ class Preprocessor():
             '''
             split = re.split(r'(?<=[.!?]) +', x)
             res = []
-            for i in range(0,len(split)-2,self.sentence_count):
-                sent = split[i]
-                sent += split[i+1]
-                sent += split[i+2]
+            for i in range(0,len(split)-(sentence_count - 1),self.sentence_count):
+                sent = ""
+                for j in range(sentence_count):
+                    sent += split[i + j]
                 res.append(sent)
             return res
             
-        rows = self.data.iloc[0:] if (row_count == None) else self.data.iloc[0:row_count]
+        rows = self.data.iloc[0:]
         rows["text"] = rows["text"].map(spl)
         rows = rows.explode("text")
 
@@ -222,6 +222,14 @@ class Evaluation:
         plt.plot(validation_loss, label="Validation",color="b")
         plt.xlabel("Epoch")
         plt.ylabel("Losses")
+        plt.legend()
+        plt.show()
+
+    @staticmethod
+    def plot_acc(accuracies):
+        plt.plot(accuracies, label="Training",color="r")
+        plt.xlabel("Epoch")
+        plt.ylabel("Accuracy")
         plt.legend()
         plt.show()
 
